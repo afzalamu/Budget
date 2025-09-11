@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>50/30/20 Budget Tracker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #222;
+      color: #fff;
+      padding: 1rem;
+      text-align: center;
+    }
+    main {
+      max-width: 800px;
+      margin: 20px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h2 {
+      border-bottom: 2px solid #ddd;
+      padding-bottom: 5px;
+    }
+    input, select, button {
+      padding: 8px;
+      margin: 5px 0;
+      width: 100%;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    button {
+      background: #222;
+      color: #fff;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #444;
+    }
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 20px 0;
+    }
+    .card {
+      background: #f8f8f8;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    table, th, td {
+      border: 1px solid #ddd;
+    }
+    th, td {
+      padding: 8px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>50/30/20 Budget Tracker</h1>
+  </header>
+  <main>
+    <section>
+      <h2>Set Income</h2>
+      <input type="number" id="incomeInput" placeholder="Enter total income">
+      <button onclick="setIncome()">Set Income</button>
+    </section>
+
+    <section>
+      <h2>Summary</h2>
+      <div class="summary">
+        <div class="card">
+          <h3>Needs (50%)</h3>
+          <p id="needs"></p>
+          <small id="needsRemaining"></small>
+        </div>
+        <div class="card">
+          <h3>Wants (30%)</h3>
+          <p id="wants"></p>
+          <small id="wantsRemaining"></small>
+        </div>
+        <div class="card">
+          <h3>Savings (20%)</h3>
+          <p id="savings"></p>
+          <small id="savingsRemaining"></small>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Add Transaction</h2>
+      <input type="text" id="desc" placeholder="Description">
+      <input type="number" id="amount" placeholder="Amount">
+      <select id="category">
+        <option value="Needs">Needs</option>
+        <option value="Wants">Wants</option>
+        <option value="Savings">Savings</option>
+      </select>
+      <button onclick="addTransaction()">Add Expense</button>
+    </section>
+
+    <section>
+      <h2>Transactions</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Description</th>
+            <th>Category</th>
+            <th>Amount</th>
+          </tr>
+        </thead>
+        <tbody id="transactionTable"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script>
+    let budget = JSON.parse(localStorage.getItem("budget")) || {
+      income: 0,
+      needs: 0,
+      wants: 0,
+      savings: 0,
+      spent: { Needs: 0, Wants: 0, Savings: 0 },
+      transactions: []
+    };
+
+    function setIncome() {
+      const income = document.getElementById("incomeInput").value;
+      if (income <= 0) return alert("Please enter valid income");
+
+      budget.income = parseFloat(income);
+      budget.needs = budget.income * 0.5;
+      budget.wants = budget.income * 0.3;
+      budget.savings = budget.income * 0.2;
+      budget.spent = { Needs: 0, Wants: 0, Savings: 0 };
+      budget.transactions = [];
+
+      saveData();
+      render();
+    }
+
+    function addTransaction() {
+      const desc = document.getElementById("desc").value;
+      const amount = parseFloat(document.getElementById("amount").value);
+      const category = document.getElementById("category").value;
+
+      if (!desc || !amount || amount <= 0) return alert("Enter valid details");
+
+      const transaction = {
+        date: new Date().toLocaleDateString(),
+        desc,
+        category,
+        amount
+      };
+
+      budget.transactions.push(transaction);
+      budget.spent[category] += amount;
+
+      saveData();
+      render();
+
+      document.getElementById("desc").value = "";
+      document.getElementById("amount").value = "";
+    }
+
+    function render() {
+      document.getElementById("needs").innerText = `₹${budget.needs}`;
+      document.getElementById("wants").innerText = `₹${budget.wants}`;
+      document.getElementById("savings").innerText = `₹${budget.savings}`;
+
+      document.getElementById("needsRemaining").innerText =
+        `Remaining: ₹${budget.needs - budget.spent.Needs}`;
+      document.getElementById("wantsRemaining").innerText =
+        `Remaining: ₹${budget.wants - budget.spent.Wants}`;
+      document.getElementById("savingsRemaining").innerText =
+        `Remaining: ₹${budget.savings - budget.spent.Savings}`;
+
+      const table = document.getElementById("transactionTable");
+      table.innerHTML = "";
+      budget.transactions.forEach(t => {
+        const row = `<tr>
+                      <td>${t.date}</td>
+                      <td>${t.desc}</td>
+                      <td>${t.category}</td>
+                      <td>₹${t.amount}</td>
+                    </tr>`;
+        table.innerHTML += row;
+      });
+    }
+
+    function saveData() {
+      localStorage.setItem("budget", JSON.stringify(budget));
+    }
+
+    render();
+  </script>
+</body>
+</html>
