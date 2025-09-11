@@ -1,68 +1,58 @@
 body {
   font-family: Arial, sans-serif;
-  background: #f4f6f9;
+  background: #f7f7f7;
   margin: 0;
-  padding: 0;
+  padding: 20px;
 }
 
 .container {
-  max-width: 600px;
-  margin: 50px auto;
-  padding: 20px;
+  max-width: 800px;
+  margin: auto;
   background: #fff;
-  border-radius: 12px;
+  padding: 20px;
+  border-radius: 10px;
   box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
-h1, h2 {
+h1, h3 {
   text-align: center;
   color: #333;
 }
 
-.section {
-  margin: 20px 0;
-}
-
 label {
-  font-weight: bold;
+  margin-right: 10px;
 }
 
 input, select, button {
-  margin: 10px 0;
-  padding: 10px;
-  width: 100%;
-  border: 1px solid #ccc;
-  border-radius: 6px;
+  margin: 5px 0;
+  padding: 8px;
+  border-radius: 5px;
+  border: 1px solid #ddd;
 }
 
 button {
   background: #007bff;
   color: white;
   cursor: pointer;
-  font-weight: bold;
 }
 
 button:hover {
   background: #0056b3;
 }
 
-.clear-btn {
-  background: #dc3545;
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
 }
 
-.clear-btn:hover {
-  background: #a71d2a;
-}
-
-ul {
-  list-style: none;
-  padding: 0;
-}
-
-ul li {
+table th, table td {
+  border: 1px solid #ddd;
   padding: 8px;
-  margin: 5px 0;
-  background: #f9f9f9;
-  border-radius: 6px;
-  border: 1px solid #eee;
+  text-align: center;
+}
+
+table th {
+  background: #007bff;
+  color: white;
 }
