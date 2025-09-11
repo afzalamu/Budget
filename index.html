@@ -10,39 +10,58 @@
   <div class="container">
     <h1>50/30/20 Budget Tracker</h1>
 
-    <!-- Total income input -->
-    <div class="section">
-      <label for="total">Enter Monthly Income:</label>
-      <input type="number" id="total" placeholder="e.g. 10000">
-      <button id="calculate">Calculate</button>
-    </div>
+    <!-- Income Section -->
+    <section>
+      <label for="total">Enter Total Monthly Income:</label>
+      <input type="number" id="total" placeholder="Enter amount">
+      <button onclick="updateRemaining()">Set Income</button>
+    </section>
 
-    <!-- Budget breakdown -->
-    <div class="section">
-      <h2>Budget Breakdown</h2>
-      <p id="needs">Needs: ₹0</p>
-      <p id="wants">Wants: ₹0</p>
-      <p id="savings">Savings: ₹0</p>
-    </div>
+    <!-- Allocations -->
+    <section>
+      <h3>Allocations</h3>
+      <p id="needs">Needs: ₹0 (Remaining: ₹0)</p>
+      <p id="wants">Wants: ₹0 (Remaining: ₹0)</p>
+      <p id="savings">Savings: ₹0 (Remaining: ₹0)</p>
+    </section>
 
-    <!-- Add expenses -->
-    <div class="section">
-      <h2>Add Expense</h2>
+    <!-- Add Expense -->
+    <section>
+      <h3>Add Expense</h3>
+      <label for="expense-section">Section:</label>
       <select id="expense-section">
         <option value="needs">Needs</option>
         <option value="wants">Wants</option>
         <option value="savings">Savings</option>
       </select>
-      <input type="number" id="expense-amount" placeholder="Amount">
-      <button id="add-expense">Add</button>
-    </div>
 
-    <!-- Expense list -->
-    <div class="section">
-      <h2>Expense History</h2>
-      <ul id="expense-list"></ul>
-      <button id="clear-expenses" class="clear-btn">Clear All</button>
-    </div>
+      <label for="expense-amount">Amount:</label>
+      <input type="number" id="expense-amount">
+
+      <label for="expense-date">Date:</label>
+      <input type="date" id="expense-date">
+
+      <label for="expense-note">Note:</label>
+      <input type="text" id="expense-note" placeholder="(optional)">
+      <br><br>
+      <button id="add-expense">Add Expense</button>
+    </section>
+
+    <!-- Expense History -->
+    <section>
+      <h3>Expense History</h3>
+      <table id="expense-list">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Section</th>
+            <th>Amount</th>
+            <th>Note</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
   </div>
 
   <script src="script.js"></script>
