@@ -1,33 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>50/30/20 Budget Tracker</title>
-  <link rel="stylesheet" href="style.css">
+  <style>
+    :root{
+      --bg: #f7f7f7;
+      --card: #fff;
+      --accent: #007bff;
+      --danger: #dc3545;
+      --muted: #666;
+    }
+    *{box-sizing:border-box}
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+      background: var(--bg);
+      margin: 0;
+      padding: 20px;
+      color: #222;
+    }
+    .container {
+      max-width: 900px;
+      margin: 10px auto;
+      background: var(--card);
+      padding: 18px;
+      border-radius: 10px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+    }
+    h1 { text-align:center; margin: 6px 0 14px 0; }
+    .section { margin: 16px 0; }
+    label { display:block; margin-top:8px; font-weight:600; }
+    input, select, button { 
+      padding: 10px; border-radius:6px; border:1px solid #ddd; width:100%;
+      margin-top:6px;
+    }
+    .btn-row{ display:flex; gap:8px; margin-top:10px; }
+    button{ background:var(--accent); color:white; border:0; cursor:pointer; font-weight:600; }
+    button:hover{ filter:brightness(.95); }
+    button.danger{ background:var(--danger); }
+    .muted{ color:var(--muted); font-size:14px; margin-top:8px; }
+    table { width:100%; border-collapse:collapse; margin-top:12px; }
+    table th, table td { border:1px solid #eee; padding:8px; text-align:center; font-size:14px; }
+    table th { background:var(--accent); color:#fff; font-weight:600; }
+    @media (max-width:700px){
+      .btn-row{ flex-direction:column; }
+      label{ font-size:14px; }
+    }
+  </style>
 </head>
 <body>
   <div class="container">
     <h1>50/30/20 Budget Tracker</h1>
 
     <!-- Income Section -->
-    <section>
+    <section class="section">
       <label for="total">Enter Total Monthly Income:</label>
-      <input type="number" id="total" placeholder="Enter amount">
-      <button onclick="updateRemaining()">Set Income</button>
+      <input type="number" id="total" placeholder="Enter amount (e.g. 50000)">
+      <div class="btn-row">
+        <button id="saveIncome">Save Income</button>
+        <button id="clearAll" class="danger">Clear All Data</button>
+      </div>
     </section>
 
     <!-- Allocations -->
-    <section>
+    <section class="section">
       <h3>Allocations</h3>
       <p id="needs">Needs: ₹0 (Remaining: ₹0)</p>
       <p id="wants">Wants: ₹0 (Remaining: ₹0)</p>
       <p id="savings">Savings: ₹0 (Remaining: ₹0)</p>
+      <p id="totalSummary" class="muted">Total Income: ₹0 • Total Spent: ₹0 • Remaining: ₹0</p>
     </section>
 
     <!-- Add Expense -->
-    <section>
+    <section class="section">
       <h3>Add Expense</h3>
+
       <label for="expense-section">Section:</label>
       <select id="expense-section">
         <option value="needs">Needs</option>
@@ -36,27 +84,30 @@
       </select>
 
       <label for="expense-amount">Amount:</label>
-      <input type="number" id="expense-amount">
+      <input type="number" id="expense-amount" placeholder="Amount">
 
       <label for="expense-date">Date:</label>
       <input type="date" id="expense-date">
 
       <label for="expense-note">Note:</label>
-      <input type="text" id="expense-note" placeholder="(optional)">
-      <br><br>
-      <button id="add-expense">Add Expense</button>
+      <input type="text" id="expense-note" placeholder="optional">
+
+      <div class="btn-row">
+        <button id="add-expense">Add Expense</button>
+      </div>
     </section>
 
     <!-- Expense History -->
-    <section>
+    <section class="section">
       <h3>Expense History</h3>
-      <table id="expense-list">
+      <table id="expense-table">
         <thead>
           <tr>
             <th>Date</th>
             <th>Section</th>
             <th>Amount</th>
             <th>Note</th>
+            <th></th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -64,6 +115,112 @@
     </section>
   </div>
 
-  <script src="script.js"></script>
+  <script>
+    const KEY_EXP = 'budget_expenses_v1';
+    const KEY_INC = 'budget_totalIncome_v1';
+
+    let expenses = JSON.parse(localStorage.getItem(KEY_EXP)) || [];
+    let totalIncome = Number(localStorage.getItem(KEY_INC)) || 0;
+
+    const totalInput = document.getElementById('total');
+    const saveIncomeBtn = document.getElementById('saveIncome');
+    const clearAllBtn = document.getElementById('clearAll');
+    const needsEl = document.getElementById('needs');
+    const wantsEl = document.getElementById('wants');
+    const savingsEl = document.getElementById('savings');
+    const totalSummary = document.getElementById('totalSummary');
+
+    const addBtn = document.getElementById('add-expense');
+    const expSection = document.getElementById('expense-section');
+    const expAmount = document.getElementById('expense-amount');
+    const expDate = document.getElementById('expense-date');
+    const expNote = document.getElementById('expense-note');
+    const tableBody = document.querySelector('#expense-table tbody');
+
+    function init(){
+      totalInput.value = totalIncome || '';
+      expDate.value = new Date().toISOString().slice(0,10);
+      renderExpenses();
+      updateRemaining();
+    }
+    init();
+
+    function saveExpenses(){ localStorage.setItem(KEY_EXP, JSON.stringify(expenses)); }
+    function saveIncome(){ localStorage.setItem(KEY_INC, String(totalIncome)); }
+
+    function fmt(n){
+      if (!isFinite(n)) return '0';
+      return '₹' + Number(n).toLocaleString();
+    }
+
+    function updateRemaining(){
+      totalIncome = Number(totalInput.value) || totalIncome || 0;
+      saveIncome();
+      const allocated = {
+        needs: totalIncome * 0.5,
+        wants: totalIncome * 0.3,
+        savings: totalIncome * 0.2
+      };
+      let spent = { needs:0, wants:0, savings:0 };
+      expenses.forEach(e => spent[e.section]+=Number(e.amount));
+      const totalSpent = spent.needs + spent.wants + spent.savings;
+      needsEl.textContent = `Needs: ${fmt(allocated.needs)} (Remaining: ${fmt(allocated.needs - spent.needs)})`;
+      wantsEl.textContent = `Wants: ${fmt(allocated.wants)} (Remaining: ${fmt(allocated.wants - spent.wants)})`;
+      savingsEl.textContent = `Savings: ${fmt(allocated.savings)} (Remaining: ${fmt(allocated.savings - spent.savings)})`;
+      totalSummary.textContent = `Total Income: ${fmt(totalIncome)} • Total Spent: ${fmt(totalSpent)} • Remaining: ${fmt(totalIncome - totalSpent)}`;
+    }
+
+    function renderExpenses(){
+      tableBody.innerHTML = '';
+      const rows = expenses.slice().sort((a,b) => new Date(b.date) - new Date(a.date));
+      rows.forEach(e => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${e.date}</td>
+          <td>${capitalize(e.section)}</td>
+          <td>${fmt(e.amount)}</td>
+          <td>${escapeHtml(e.note || '')}</td>
+          <td><button data-id="${e.id}" class="del-btn">Delete</button></td>
+        `;
+        tableBody.appendChild(tr);
+      });
+      tableBody.querySelectorAll('.del-btn').forEach(btn=>{
+        btn.addEventListener('click',()=>{
+          expenses = expenses.filter(x=>x.id!==btn.dataset.id);
+          saveExpenses(); renderExpenses(); updateRemaining();
+        });
+      });
+    }
+
+    addBtn.addEventListener('click', () => {
+      const section = expSection.value.toLowerCase();
+      const amount = Number(expAmount.value);
+      const dateVal = expDate.value || new Date().toISOString().slice(0,10);
+      const note = expNote.value || '';
+      if (!amount || amount<=0){ alert('Enter a valid amount'); return; }
+      const id = String(Date.now()) + Math.random().toString(36).slice(2,6);
+      expenses.push({ id, date: dateVal, section, amount, note });
+      saveExpenses();
+      expAmount.value=''; expNote.value='';
+      expDate.value = new Date().toISOString().slice(0,10);
+      renderExpenses(); updateRemaining();
+    });
+
+    saveIncomeBtn.addEventListener('click', () => {
+      const val = Number(totalInput.value);
+      if (!isFinite(val)||val<0){ alert('Enter valid income'); return; }
+      totalIncome=val; saveIncome(); updateRemaining();
+    });
+
+    clearAllBtn.addEventListener('click',()=>{
+      if(!confirm('Clear ALL data?')) return;
+      expenses=[]; totalIncome=0;
+      localStorage.removeItem(KEY_EXP); localStorage.removeItem(KEY_INC);
+      totalInput.value=''; renderExpenses(); updateRemaining();
+    });
+
+    function capitalize(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+    function escapeHtml(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+  </script>
 </body>
 </html>
