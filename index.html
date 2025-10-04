@@ -263,11 +263,11 @@
             margin-bottom: 16px;
         }
         
-        /* BOTTOM GRID: Chart + History (Chart is smaller, History takes up more space) */
+        /* BOTTOM GRID: Chart + History */
         .table-and-chart-grid {
             display: grid;
-            /* 40% for the chart, 60% for the wide table/history */
-            grid-template-columns: 2fr 3fr; 
+            /* FIX: 45% for Chart, 55% for the wide table/history */
+            grid-template-columns: 45% 55%; 
             gap: 20px;
             margin-bottom: 16px;
         }
@@ -283,7 +283,7 @@
             margin-right: auto;
         }
         #categoryChart {
-            max-width: 100%; /* Allows the chart to fill its smaller 40% column */
+            max-width: 350px; /* Limits the visual chart size within the 45% column */
         }
     }
 
