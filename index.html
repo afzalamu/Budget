@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>50/30/20 Budget Tracker</title>
+  <title>Budget Tracker</title>
   <style>
     :root{
       --bg: #f7f7f7;
@@ -29,7 +29,22 @@
       border-radius: 10px;
       box-shadow: 0 6px 20px rgba(0,0,0,0.06);
     }
-    h1 { text-align:center; margin: 6px 0 14px 0; font-size: 24px; }
+    h1 { text-align:center; margin: 6px 0 2px 0; font-size: 24px; }
+    .quote { 
+        text-align: center; 
+        font-style: italic; 
+        color: var(--muted); 
+        margin-bottom: 14px;
+        font-size: 14px;
+    }
+    .dua {
+        text-align: center;
+        font-size: 16px;
+        font-weight: 600;
+        margin-top: 5px; /* Adjusted margin */
+        margin-bottom: 15px;
+        color: var(--success);
+    }
     h3 { margin-top: 20px; font-size: 18px; }
     .section { margin: 16px 0; padding: 10px; border: 1px solid #eee; border-radius: 8px;}
     label { display:block; margin-top:8px; font-weight:600; font-size: 14px; }
@@ -135,7 +150,9 @@
 </head>
 <body>
   <div class="container">
-    <h1>50/30/20 Budget Tracker 📊</h1>
+    
+    <p id="topDuaDisplay" class="dua">
+        </p>
 
     <section class="section">
       <label for="total">Enter Total Monthly Income:</label>
@@ -154,6 +171,7 @@
       <h3>Allocations 💰 
         <button id="editAllocations" class="edit-allocation-btn">Edit Percentages</button>
       </h3>
+      
       <p id="needs">Needs: ₹0 (Remaining: ₹0)</p>
       <p id="wants">Wants: ₹0 (Remaining: ₹0)</p>
       <p id="savings">Savings: ₹0 (Current Saved: ₹0)</p>
@@ -264,6 +282,30 @@
     const KEY_ALLOC = 'budget_allocations_v15';
     const KEY_CATEGORIES = 'budget_categories_v15';
 
+    // 20 Du'as related to Rizq, Barakah, and Sufficiency
+    const ROTATING_DUAS = [
+        { arabic: "اللَّهُمَّ إِنِّي أَسْأَلُكَ عِلْمًا نَافِعًا وَرِزْقًا طَيِّبًا وَعَمَلًا مُتَقَبَّلاً", translation: "O Allah, I ask You for beneficial knowledge, pure provision, and accepted deeds." },
+        { arabic: "اللّهُمَّ اكْفِنِي بِحَلالِكَ عَنْ حَرَامِكَ وَأَغْنِنِي بِفَضْلِكَ عَمَّنْ سِوَاكَ", translation: "O Allah, suffice me with Your lawful provision instead of Your unlawful, and make me independent of anyone besides You by Your Grace." },
+        { arabic: "اللَّهُمَّ اغْفِرْ لِي وَارْحَمْنِي وَاهْدِنِي وَعَافِنِي وَارْزُقْنِي", translation: "O Allah! Forgive me, have mercy on me, guide me, guard me against harm, and provide me with sustenance (Rizq)." },
+        { arabic: "رَبِّ إِنِّي لِمَا أَنزَلْتَ إِلَيَّ مِنْ خَيْرٍ فَقِيرٌ", translation: "My Lord! I am truly in need of whatever good You may send down to me." },
+        { arabic: "رَبَّنَآ ءَاتِنَا فِى ٱلدُّنْيَا حَسَنَةً وَفِى ٱلْـَٔاخِرَةِ حَسَنَةً وَقِنَا عَذَابَ ٱلنَّارِ", translation: "Our Lord, give us in this world [that which is] good and in the Hereafter [that which is] good and protect us from the punishment of the Fire." },
+        { arabic: "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنْ الْهَمِّ وَالْحَزَنِ وَالْعَجْزِ وَالْكَسَلِ وَالْجُبْنِ وَالْبُخْلِ وَضَلَعِ الدَّيْنِ وَغَلَبَةِ الرِّجَالِ", translation: "O Allah, I seek refuge in You from anxiety and sorrow, weakness and laziness, miserliness and cowardice, the burden of debts and from being overpowered by men." },
+        { arabic: "اللَّهُمَّ بَارِكْ لَنَا فِيمَا رَزَقْتَنَا وَقِنَا عَذَابَ النَّارِ", translation: "O Allah! Bless us in what You have provided us with and protect us from the punishment of the Fire." },
+        { arabic: "اللَّهُمَّ أَكْثِرْ مَالِي وَوَلَدِي، وَبَارِكْ لِي فِيمَا أَعْطَيْتَنِي", translation: "O Allah, increase my wealth and children, and bless me in what You have given me." },
+        { arabic: "اللَّهُمَّ اجْعَلْ أَوْسَعَ رِزْقِكَ عَلَيَّ عِنْدَ كِبَرِ سِنِّي", translation: "O Allah, make the most ample provision You grant me be when I am old." },
+        { arabic: "اللَّهُمَّ لَا مَانِعَ لِمَا أَعْطَيْتَ، وَلَا مُعْطِيَ لِمَا مَنَعْتَ", translation: "O Allah, none can withhold what You give, and none can give what You withhold." },
+        { arabic: "يَا مَالِكَ الْمُلْكِ تُؤْتِي الْمُلْكَ مَن تَشَاءُ وَتَنزِعُ الْمُلْكَ مِمَّن تَشَاءُ", translation: "O Owner of the Dominion, You give dominion to whom You will and You take dominion from whom You will." },
+        { arabic: "اللَّهُمَّ إِنِّي أَسْأَلُكَ مِنْ فَضْلِكَ", translation: "O Allah, I ask for Your favor." },
+        { arabic: "حَسْبُنَا اللَّهُ وَنِعْمَ الْوَكِيلُ", translation: "Sufficient for us is Allah, and [He is] the best Disposer of affairs." },
+        { arabic: "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْفَقْرِ، وَالْقِلَّةِ، وَالذِّلَّةِ", translation: "O Allah, I seek refuge in You from poverty, scarcity, and humiliation." },
+        { arabic: "اللَّهُمَّ اجْعَلْ رِزْقِي رَغَدًا", translation: "O Allah, make my provision ample." },
+        { arabic: "اللَّهُمَّ بَارِكْ لَنَا فِي رِزْقِنَا", translation: "O Allah, bless us in our provision." },
+        { arabic: "وَمَن يَتَّقِ اللَّهَ يَجْعَل لَّهُ مَخْرَجًا وَيَرْزُقْهُ مِنْ حَيْثُ لَا يَحْتَسِبُ", translation: "And whoever fears Allah—He will make for him a way out and will provide for him from where he does not expect." },
+        { arabic: "اللَّهُمَّ أَعِنِّي عَلَى شُكْرِكَ وَحُسْنِ عِبَادَتِكَ", translation: "O Allah, help me to remember You, to thank You, and to worship You in the best of manners." },
+        { arabic: "اللَّهُمَّ إِنِّي أَسْأَلُكَ الْغِنَى وَالتُّقَى وَالْهُدَى", translation: "O Allah, I ask You for wealth, righteousness, and guidance." },
+        { arabic: "اللَّهُمَّ اجْعَلْنِي مِنَ الْمُتَوَكِّلِينَ عَلَيْكَ", translation: "O Allah, make me among those who rely on You." }
+    ];
+
     // Single, universal list of categories
     const BASE_CATEGORIES = [
         'Rent', 'Utilities', 'Groceries', 'Purchase/Bill', 'Debt Payments', 'Insurance', 
@@ -290,7 +332,8 @@
     const expAmount = document.getElementById('expense-amount');
     const expNote = document.getElementById('expense-note');
     const tableBody = document.querySelector('#expense-table tbody');
-
+    const topDuaDisplay = document.getElementById('topDuaDisplay'); // New DOM element
+    
     // Category Modal Elements
     const categoryModal = document.getElementById('categoryModal');
     const manageCategoriesBtn = document.getElementById('manageCategoriesBtn');
@@ -312,18 +355,28 @@
       populateCategorySelect();
       renderExpenses();
       
-      // FIX 1: Ensure chart setup happens before update logic
+      // FIX: Ensure chart setup happens before update logic
       setupChart(); 
       
-      // FIX 2: Explicitly call updateRemaining which calls updateChart() 
-      // This guarantees the chart is rendered immediately upon page load.
+      // FIX: Explicitly call updateRemaining which calls updateChart() 
       updateRemaining();
       
+      displayRandomDua(); // Display Du'a on load
       attachEventListeners();
     }
     
-    // --- Data Management & Helper Functions ---
-    
+    // --- Du'a Functionality ---
+    function displayRandomDua() {
+        const randomIndex = Math.floor(Math.random() * ROTATING_DUAS.length);
+        const dua = ROTATING_DUAS[randomIndex];
+        
+        topDuaDisplay.innerHTML = `
+            ${dua.arabic}
+            <br>(${dua.translation})
+        `;
+    }
+
+    // --- Data Management & Helper Functions (omitted for brevity, unchanged) ---
     function saveExpenses(){ localStorage.setItem(KEY_EXP, JSON.stringify(expenses)); }
     function saveIncome(){ localStorage.setItem(KEY_INC, String(totalIncome)); }
     function saveAllocations(){ localStorage.setItem(KEY_ALLOC, JSON.stringify(allocations)); }
@@ -348,7 +401,7 @@
         ).join('');
     }
 
-    // --- Category Management Functions ---
+    // --- Category Management Functions (omitted for brevity, unchanged) ---
     function renderCategoryList() {
         currentCategoryList.innerHTML = '';
         
@@ -404,7 +457,7 @@
     }
 
 
-    // --- UI Update Functions ---
+    // --- UI Update Functions (omitted for brevity, unchanged) ---
     
     function updateRemaining(){
       totalIncome = Number(totalInput.value) || totalIncome || 0;
@@ -424,24 +477,20 @@
           const amount = Number(e.amount);
           spent[e.section] += amount;
           
-          // Calculate total expenditure (always positive amount, regardless of section/sign)
           totalExpenditure += Math.abs(amount);
       });
       
       const totalSpent = totalExpenditure;
       
-      // totalSavedAmount reflects the base allocation plus net withdrawals
       const totalSavedAmount = allocated.savings + spent.savings; 
 
       const remainingAfterNeedsWants = totalIncome - totalSpent; 
       const effectiveSavingsRate = formatPercent(totalSavedAmount, totalIncome);
       
-      // Update Allocation text
       needsEl.textContent = `Needs (${allocP.needs}%): ${fmt(allocated.needs)} (Remaining: ${fmt(allocated.needs - spent.needs)})`;
       wantsEl.textContent = `Wants (${allocP.wants}%): ${fmt(allocated.wants)} (Remaining: ${fmt(allocated.wants - spent.wants)})`;
       savingsEl.textContent = `Savings (${allocP.savings}%): ${fmt(allocated.savings)} (Current Saved: ${fmt(totalSavedAmount)})`;
       
-      // Update Summary text
       totalSummary.textContent = `Total Income: ${fmt(totalIncome)} • Total Spent: ${fmt(totalSpent)} • Remaining: ${fmt(remainingAfterNeedsWants)} • Savings Rate: ${effectiveSavingsRate}`;
       
       updateChart();
@@ -457,10 +506,8 @@
         let displayAmount;
         
         if (e.section === 'savings') {
-             // All savings transactions are withdrawals (negative internal value)
              displayAmount = fmt(Math.abs(amountValue)) + ' (Withdrawal)';
         } else {
-            // Needs/Wants are positive.
             displayAmount = fmt(amountValue);
         }
 
@@ -482,10 +529,9 @@
       });
     }
     
-    // --- Chart Logic ---
+    // --- Chart Logic (omitted for brevity, unchanged) ---
     function setupChart() {
         const ctx = document.getElementById('categoryChart').getContext('2d');
-        // FIX: Destroy any existing chart instance before creating a new one
         if (categoryChart) {
             categoryChart.destroy();
         }
@@ -513,7 +559,6 @@
                 const category = e.category;
                 const amount = Number(e.amount);
                 
-                // Use Math.abs() to ensure all expenditures (including withdrawals) show up as a positive segment
                 categorySpending[category] = (categorySpending[category] || 0) + Math.abs(amount);
             }
         });
@@ -530,7 +575,7 @@
         categoryChart.update();
     }
     
-    // --- Event Listeners and Handlers ---
+    // --- Event Listeners and Handlers (omitted for brevity, unchanged) ---
 
     function attachEventListeners() {
       document.getElementById('expense-section').addEventListener('change', populateCategorySelect);
