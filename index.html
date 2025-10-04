@@ -5,102 +5,151 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Budget Tracker</title>
   <style>
+    /* -----------------------------------
+       1. Base Color Variables (LIGHT Theme Default)
+       ----------------------------------- */
     :root{
       --bg: #f7f7f7;
       --card: #fff;
+      --text: #222;
       --accent: #007bff;
       --danger: #dc3545;
-      --muted: #666;
       --success: #28a745;
+      --muted: #666;
+      --border: #ddd;
+      --shadow-color: rgba(0,0,0,0.1);
     }
+
+    /* -----------------------------------
+       2. Dark Mode Overrides
+       ----------------------------------- */
+    body.dark-mode {
+      --bg: #1a1a2e; /* Deep Background */
+      --card: #2c2c44; /* Card Background */
+      --text: #e0e0e0; /* Light Text */
+      --accent: #5e64ff; /* Primary Blue/Purple */
+      --danger: #ff497c; /* Danger Pink */
+      --success: #3be982; /* Success Green */
+      --muted: #a0a0c0; /* Muted Text */
+      --border: #404060; /* Border Color */
+      --shadow-color: rgba(0,0,0,0.5);
+    }
+
+    /* -----------------------------------
+       3. General & Layout Styling
+       ----------------------------------- */
     *{box-sizing:border-box}
     body {
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial;
       background: var(--bg);
       margin: 0;
       padding: 10px;
-      color: #222;
+      color: var(--text);
+      transition: background 0.3s, color 0.3s;
     }
     .container {
       max-width: 900px;
       margin: 10px auto;
       background: var(--card);
       padding: 18px;
-      border-radius: 10px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+      border-radius: 12px;
+      box-shadow: 0 10px 30px var(--shadow-color); 
+      transition: background 0.3s, box-shadow 0.3s;
     }
     h1 { text-align:center; margin: 6px 0 2px 0; font-size: 24px; }
-    .quote { 
-        text-align: center; 
-        font-style: italic; 
-        color: var(--muted); 
-        margin-bottom: 14px;
-        font-size: 14px;
-    }
+    
+    /* Du'a Styling */
     .dua {
         text-align: center;
         font-size: 16px;
         font-weight: 600;
-        margin-top: 5px; /* Adjusted margin */
+        margin-top: 5px;
         margin-bottom: 15px;
-        color: var(--success);
+        color: var(--success); /* Always use the theme's success color */
     }
-    h3 { margin-top: 20px; font-size: 18px; }
-    .section { margin: 16px 0; padding: 10px; border: 1px solid #eee; border-radius: 8px;}
+    
+    h3 { margin-top: 20px; font-size: 18px; color: var(--accent); }
+    .section { 
+        margin: 16px 0; 
+        padding: 15px; 
+        border: 1px solid var(--border); 
+        border-radius: 10px;
+        background: var(--card); /* Base section color */
+        transition: background 0.3s, border-color 0.3s;
+    }
+    body.dark-mode .section {
+        background: #363650; /* Slightly darker than card background */
+    }
+
     label { display:block; margin-top:8px; font-weight:600; font-size: 14px; }
     input, select, button { 
-      padding: 10px; border-radius:6px; border:1px solid #ddd; width:100%;
-      margin-top:6px; font-size: 14px;
+      padding: 12px;
+      border-radius:8px; 
+      border:1px solid var(--border); 
+      width:100%;
+      margin-top:6px; 
+      font-size: 14px;
+      background: var(--card); 
+      color: var(--text);
+      transition: background 0.3s, color 0.3s, border-color 0.3s;
     }
-    .btn-row{ display:flex; gap:8px; margin-top:10px; }
-    button{ background:var(--accent); color:white; border:0; cursor:pointer; font-weight:600; transition: background-color 0.3s; }
-    button:hover{ filter:brightness(.95); }
+    
+    .btn-row{ display:flex; gap:10px; margin-top:12px; }
+    button{ 
+        background:var(--accent); 
+        color:white; 
+        border:0; 
+        cursor:pointer; 
+        font-weight:600; 
+        transition: background-color 0.3s, transform 0.1s; 
+    }
+    button:hover{ filter:brightness(1.2); transform: translateY(-1px); }
     button.danger{ background:var(--danger); }
     button.success{ background:var(--success); }
+    button.danger:hover{ filter:brightness(1.2); }
+    button.success:hover{ filter:brightness(1.2); }
+    
     .muted{ color:var(--muted); font-size:14px; margin-top:8px; }
-    table { width:100%; border-collapse:collapse; margin-top:12px; }
-    table th, table td { border:1px solid #eee; padding:8px; text-align:center; font-size:12px; }
-    table th { background:var(--accent); color:#fff; font-weight:600; }
+    
+    /* Responsive Table Wrapper */
+    .table-responsive {
+        overflow-x: auto;
+        width: 100%;
+        -webkit-overflow-scrolling: touch;
+    }
+    table { 
+        width: 100%; 
+        min-width: 600px; 
+        border-collapse:collapse; 
+        margin-top:12px; 
+    }
+    table th { 
+        background: var(--accent); 
+        color: #fff; 
+        font-weight:600; 
+    }
+    table th, table td { 
+        border:1px solid var(--border); 
+        padding:8px; 
+        text-align:center; 
+        font-size:12px; 
+    }
+    
+    /* Allocation Edit Button */
     .edit-allocation-btn {
         background: none;
-        color: var(--accent);
-        border: 1px solid var(--accent);
+        color: var(--muted);
+        border: 1px solid var(--muted);
         padding: 4px 8px;
         font-size: 12px;
         width: auto;
         margin-left: 10px;
-        transition: background-color 0.3s, color 0.3s;
+        transition: all 0.3s;
     }
     .edit-allocation-btn:hover {
         background: var(--accent);
         color: white;
-    }
-    /* Chart and Category Management Styling */
-    .chart-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        flex-direction: column;
-        margin-top: 20px;
-    }
-    canvas {
-        max-width: 100%;
-        height: auto;
-    }
-    .category-list-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 5px 0;
-        border-bottom: 1px dotted #ccc;
-    }
-    .category-list-item:last-child { border-bottom: none; }
-    .cat-del-btn {
-        background: var(--danger);
-        width: auto;
-        padding: 4px 8px;
-        font-size: 12px;
-        margin: 0;
+        border-color: var(--accent);
     }
 
     /* Modal Styling */
@@ -113,44 +162,103 @@
       width: 100%;
       height: 100%;
       overflow: auto;
-      background-color: rgba(0,0,0,0.4);
-      padding-top: 60px;
+      background-color: rgba(0,0,0,0.6);
+      padding-top: 20px;
     }
     .modal-content {
-      background-color: #fefefe;
-      margin: 5% auto;
-      padding: 20px;
-      border: 1px solid #888;
-      width: 90%;
+      background-color: var(--card); /* Modal uses card background */
+      margin: 10% auto; 
+      padding: 25px;
+      border: 1px solid var(--border);
+      width: 95%; 
       max-width: 500px;
-      border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      border-radius: 12px;
+      box-shadow: 0 10px 30px var(--shadow-color);
+      transition: background 0.3s, border-color 0.3s;
     }
-    .close {
-      color: #aaa;
-      float: right;
-      font-size: 28px;
-      font-weight: bold;
+    .close { color: var(--danger); }
+    .close:hover, .close:focus { color: var(--text); }
+    
+    /* Theme Toggle Switch */
+    .theme-toggle-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 10px;
+        padding: 5px;
+        background: var(--card);
+        border-radius: 8px;
     }
-    .close:hover,
-    .close:focus {
-      color: #000;
-      text-decoration: none;
-      cursor: pointer;
+    .theme-toggle-container label {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: normal;
+        margin: 0;
     }
+    .theme-switch {
+        position: relative;
+        display: inline-block;
+        width: 40px;
+        height: 24px;
+        margin: 0 10px;
+    }
+    .theme-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: var(--muted);
+        transition: .4s;
+        border-radius: 24px;
+    }
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 16px;
+        width: 16px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
+    /* State changes */
+    input:checked + .slider {
+        background-color: var(--accent);
+    }
+    input:checked + .slider:before {
+        transform: translateX(16px);
+    }
+
+    /* Media Queries */
     @media (max-width:700px){
       .btn-row{ flex-direction:column; }
-      label{ font-size:14px; }
-      h1 { font-size: 20px; }
       .container { padding: 10px; }
-      table th, table td { padding: 6px; }
-      .edit-allocation-btn { margin-left: 0; margin-top: 5px; }
+      .modal-content { margin: 5% auto; } 
     }
   </style>
 </head>
 <body>
   <div class="container">
     
+    <div class="theme-toggle-container">
+        <label for="themeToggle">☀️ Light Mode</label>
+        <div class="theme-switch">
+            <input type="checkbox" id="themeToggle">
+            <span class="slider"></span>
+        </div>
+        <label for="themeToggle">🌙 Dark Mode</label>
+    </div>
+
     <p id="topDuaDisplay" class="dua">
         </p>
 
@@ -219,19 +327,21 @@
 
     <section class="section">
       <h3>Expense History</h3>
-      <table id="expense-table">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Section</th>
-            <th>Category</th>
-            <th>Amount</th>
-            <th>Note</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+      <div class="table-responsive">
+        <table id="expense-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Section</th>
+              <th>Category</th>
+              <th>Amount</th>
+              <th>Note</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </section>
     
     <section class="section" style="border: none; padding-bottom: 0;">
@@ -268,7 +378,7 @@
         <button id="addCategoryBtn" class="success" style="margin-top: 8px;">Add Category</button>
       </div>
 
-      <h4 style="margin-top: 20px; border-bottom: 1px solid #ccc; padding-bottom: 5px;">Current Categories:</h4>
+      <h4 style="margin-top: 20px; border-bottom: 1px solid var(--border); padding-bottom: 5px;">Current Categories:</h4>
       <div id="currentCategoryList">
         </div>
     </div>
@@ -281,6 +391,7 @@
     const KEY_INC = 'budget_totalIncome_v15';
     const KEY_ALLOC = 'budget_allocations_v15';
     const KEY_CATEGORIES = 'budget_categories_v15';
+    const KEY_THEME = 'budget_theme_v1';
 
     // 20 Du'as related to Rizq, Barakah, and Sufficiency
     const ROTATING_DUAS = [
@@ -305,7 +416,7 @@
         { arabic: "اللَّهُمَّ إِنِّي أَسْأَلُكَ الْغِنَى وَالتُّقَى وَالْهُدَى", translation: "O Allah, I ask You for wealth, righteousness, and guidance." },
         { arabic: "اللَّهُمَّ اجْعَلْنِي مِنَ الْمُتَوَكِّلِينَ عَلَيْكَ", translation: "O Allah, make me among those who rely on You." }
     ];
-
+    
     // Single, universal list of categories
     const BASE_CATEGORIES = [
         'Rent', 'Utilities', 'Groceries', 'Purchase/Bill', 'Debt Payments', 'Insurance', 
@@ -332,8 +443,9 @@
     const expAmount = document.getElementById('expense-amount');
     const expNote = document.getElementById('expense-note');
     const tableBody = document.querySelector('#expense-table tbody');
-    const topDuaDisplay = document.getElementById('topDuaDisplay'); // New DOM element
-    
+    const topDuaDisplay = document.getElementById('topDuaDisplay');
+    const themeToggle = document.getElementById('themeToggle');
+
     // Category Modal Elements
     const categoryModal = document.getElementById('categoryModal');
     const manageCategoriesBtn = document.getElementById('manageCategoriesBtn');
@@ -350,21 +462,35 @@
     let categoryChart;
 
     function init(){
+      // Load and apply theme preference first
+      const savedTheme = localStorage.getItem(KEY_THEME);
+      if (savedTheme === 'dark') {
+          document.body.classList.add('dark-mode');
+          themeToggle.checked = true;
+      }
+      
       totalInput.value = totalIncome || '';
       expDate.value = new Date().toISOString().slice(0,10);
       populateCategorySelect();
       renderExpenses();
       
-      // FIX: Ensure chart setup happens before update logic
       setupChart(); 
-      
-      // FIX: Explicitly call updateRemaining which calls updateChart() 
       updateRemaining();
       
       displayRandomDua(); // Display Du'a on load
       attachEventListeners();
     }
     
+    // --- Theme Toggling ---
+    function toggleTheme() {
+        document.body.classList.toggle('dark-mode');
+        const isDarkMode = document.body.classList.contains('dark-mode');
+        localStorage.setItem(KEY_THEME, isDarkMode ? 'dark' : 'light');
+        // Re-render chart to pick up new colors (required by Chart.js)
+        setupChart();
+        updateChart();
+    }
+
     // --- Du'a Functionality ---
     function displayRandomDua() {
         const randomIndex = Math.floor(Math.random() * ROTATING_DUAS.length);
@@ -376,7 +502,8 @@
         `;
     }
 
-    // --- Data Management & Helper Functions (omitted for brevity, unchanged) ---
+    // --- Data Management & Helper Functions ---
+    
     function saveExpenses(){ localStorage.setItem(KEY_EXP, JSON.stringify(expenses)); }
     function saveIncome(){ localStorage.setItem(KEY_INC, String(totalIncome)); }
     function saveAllocations(){ localStorage.setItem(KEY_ALLOC, JSON.stringify(allocations)); }
@@ -401,7 +528,7 @@
         ).join('');
     }
 
-    // --- Category Management Functions (omitted for brevity, unchanged) ---
+    // --- Category Management Functions ---
     function renderCategoryList() {
         currentCategoryList.innerHTML = '';
         
@@ -457,7 +584,7 @@
     }
 
 
-    // --- UI Update Functions (omitted for brevity, unchanged) ---
+    // --- UI Update Functions ---
     
     function updateRemaining(){
       totalIncome = Number(totalInput.value) || totalIncome || 0;
@@ -477,20 +604,24 @@
           const amount = Number(e.amount);
           spent[e.section] += amount;
           
+          // Calculate total expenditure (always positive amount, regardless of section/sign)
           totalExpenditure += Math.abs(amount);
       });
       
       const totalSpent = totalExpenditure;
       
+      // totalSavedAmount reflects the base allocation plus net withdrawals
       const totalSavedAmount = allocated.savings + spent.savings; 
 
       const remainingAfterNeedsWants = totalIncome - totalSpent; 
       const effectiveSavingsRate = formatPercent(totalSavedAmount, totalIncome);
       
+      // Update Allocation text
       needsEl.textContent = `Needs (${allocP.needs}%): ${fmt(allocated.needs)} (Remaining: ${fmt(allocated.needs - spent.needs)})`;
       wantsEl.textContent = `Wants (${allocP.wants}%): ${fmt(allocated.wants)} (Remaining: ${fmt(allocated.wants - spent.wants)})`;
       savingsEl.textContent = `Savings (${allocP.savings}%): ${fmt(allocated.savings)} (Current Saved: ${fmt(totalSavedAmount)})`;
       
+      // Update Summary text
       totalSummary.textContent = `Total Income: ${fmt(totalIncome)} • Total Spent: ${fmt(totalSpent)} • Remaining: ${fmt(remainingAfterNeedsWants)} • Savings Rate: ${effectiveSavingsRate}`;
       
       updateChart();
@@ -506,8 +637,10 @@
         let displayAmount;
         
         if (e.section === 'savings') {
+             // All savings transactions are withdrawals (negative internal value)
              displayAmount = fmt(Math.abs(amountValue)) + ' (Withdrawal)';
         } else {
+            // Needs/Wants are positive.
             displayAmount = fmt(amountValue);
         }
 
@@ -529,9 +662,10 @@
       });
     }
     
-    // --- Chart Logic (omitted for brevity, unchanged) ---
+    // --- Chart Logic ---
     function setupChart() {
         const ctx = document.getElementById('categoryChart').getContext('2d');
+        // Destroy any existing chart instance before creating a new one
         if (categoryChart) {
             categoryChart.destroy();
         }
@@ -542,7 +676,19 @@
                 labels: [],
                 datasets: [{ data: [], backgroundColor: [], hoverOffset: 4 }]
             },
-            options: { responsive: true, plugins: { legend: { position: 'top' }, title: { display: false } } }
+            options: { 
+                responsive: true, 
+                plugins: { 
+                    legend: { 
+                        position: 'top',
+                        labels: {
+                            // Ensures legend text color matches the current theme
+                            color: document.body.classList.contains('dark-mode') ? 'var(--text)' : 'var(--text)'
+                        }
+                    }, 
+                    title: { display: false } 
+                } 
+            }
         });
     }
 
@@ -575,9 +721,12 @@
         categoryChart.update();
     }
     
-    // --- Event Listeners and Handlers (omitted for brevity, unchanged) ---
+    // --- Event Listeners and Handlers ---
 
     function attachEventListeners() {
+      // Theme Toggle Listener
+      document.getElementById('themeToggle').addEventListener('change', toggleTheme);
+      
       document.getElementById('expense-section').addEventListener('change', populateCategorySelect);
       document.getElementById('add-expense').addEventListener('click', handleAddExpense);
       document.getElementById('saveIncome').addEventListener('click', handleSaveIncome);
