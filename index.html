@@ -265,7 +265,7 @@
         /* BOTTOM GRID: Chart + History */
         .table-and-chart-grid {
             display: grid;
-            /* 45% for Chart, 55% for the wide table/history */
+            /* FIX: 45% for Chart, 55% for the wide table/history */
             grid-template-columns: 45% 55%; 
             gap: 20px;
             margin-bottom: 16px;
@@ -774,41 +774,71 @@
         categoryChart.update();
     }
     
-    // --- Export to CSV Function ---
+    // --- Export to CSV Function (FIXED to include Summary Data) ---
     function exportToCsv() {
+        // --- 1. Gather Summary Data ---
+        const allocated = {
+            needs: totalIncome * (allocations.needs / 100),
+            wants: totalIncome * (allocations.wants / 100),
+            savings: totalIncome * (allocations.savings / 100)
+        };
+        
+        let netSpent = { needs:0, wants:0, savings:0 };
+        expenses.forEach(e => netSpent[e.section] += Number(e.amount));
+        
+        const totalSpent = (Math.abs(netSpent.needs) + Math.abs(netSpent.wants) + Math.abs(netSpent.savings));
+        const totalSavedAmount = allocated.savings + netSpent.savings;
+        const remaining = totalIncome - totalSpent;
+        const savingsRate = formatPercent(totalSavedAmount, totalIncome);
+
+
+        // --- 2. Build Summary Header ---
+        let csv = 'Budget Summary\n';
+        csv += `Total Income,${totalIncome}\n`;
+        csv += `Total Spent,${totalSpent.toFixed(2)}\n`;
+        csv += `Remaining (Income - Spent),${remaining.toFixed(2)}\n`;
+        csv += `Savings Rate,${savingsRate}\n`;
+        csv += 'Allocations,Percentage,Target Amount,Net Spent,Remaining\n';
+        
+        // Add allocation rows
+        csv += `Needs,${allocations.needs}%,${allocated.needs.toFixed(2)},${(allocated.needs - netSpent.needs).toFixed(2)},${(netSpent.needs).toFixed(2)}\n`;
+        csv += `Wants,${allocations.wants}%,${allocated.wants.toFixed(2)},${(allocated.wants - netSpent.wants).toFixed(2)},${(netSpent.wants).toFixed(2)}\n`;
+        csv += `Savings (Initial 20%),${allocations.savings}%,${allocated.savings.toFixed(2)},${totalSavedAmount.toFixed(2)},${(netSpent.savings).toFixed(2)}\n`; // Net spent in this context is net change
+
+        csv += '\nExpense History\n';
+        
+        // --- 3. Build Transaction Data ---
         if (expenses.length === 0) {
-            alert("No expense data to export.");
-            return;
+            csv += 'No transactions recorded.\n';
+        } else {
+            // Define CSV headers for transactions
+            csv += 'Date,Section,Category,Amount,Note,Type\n';
+
+            expenses.forEach(e => {
+                const amount = Number(e.amount);
+                const type = amount < 0 ? 'Withdrawal' : 'Expense';
+                const cleanNote = (e.note || '').replace(/,/g, ';'); // Replace commas in notes
+                
+                csv += [
+                    e.date,
+                    capitalize(e.section),
+                    e.category,
+                    Math.abs(amount).toFixed(2), // Export absolute value
+                    cleanNote,
+                    type
+                ].join(',') + '\n';
+            });
         }
+        
 
-        // Define CSV headers
-        let csv = 'Date,Section,Category,Amount,Note,Type\n';
-
-        // Map data to CSV format
-        expenses.forEach(e => {
-            const amount = Number(e.amount);
-            const type = amount < 0 ? 'Withdrawal' : 'Expense';
-            const cleanNote = (e.note || '').replace(/,/g, ';'); // Replace commas in notes to avoid CSV corruption
-            
-            csv += [
-                e.date,
-                capitalize(e.section),
-                e.category,
-                Math.abs(amount).toFixed(2), // Export absolute value for clean number column
-                cleanNote,
-                type
-            ].join(',') + '\n';
-        });
-
-        // Create a downloadable blob
+        // --- 4. Trigger Download ---
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', `budget_expenses_${new Date().toISOString().slice(0,10)}.csv`);
+        link.setAttribute('download', `budget_report_${new Date().toISOString().slice(0,10)}.csv`);
         
-        // Append link, click it, and remove it
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -826,7 +856,7 @@
       document.getElementById('saveIncome').addEventListener('click', handleSaveIncome);
       clearAllBtn.addEventListener('click', handleClearAll);
       
-      // NEW CSV Listener
+      // CSV Listener
       document.getElementById('exportCsv').addEventListener('click', exportToCsv); 
       
       // Allocation Modal Listeners
