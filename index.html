@@ -416,6 +416,33 @@
              <button id="archiveMonth" class="success">Archive Month & Reset</button>
         </div>
     </section>
+
+    <section class="section">
+        <h3>How to Use This Tracker: A Simple Guide</h3>
+        <p>This tracker helps you maintain a balanced budget by adhering to Islamic principles of moderation (avoiding extravagance and miserliness).</p>
+        
+        <ol>
+            <li><strong>Setup:</strong> Enter your total monthly income and click 'Save Income'. Optionally, use 'Edit Percentages' to customize your 50/30/20 split.</li>
+            
+            <li><strong>Manage Categories:</strong> Use the 'Manage Categories' button to add or delete custom sub-categories (e.g., 'Subscriptions', 'Car Fund') that fit your life.</li>
+            
+            <li><strong>Log Transactions:</strong> Use the 'Add Expense' form for *every* spending transaction.
+                <ul>
+                    <li>For **Needs** or **Wants**, enter the amount spent (e.g., ₹500).</li>
+                    <li>For **Savings**, enter the amount withdrawn (e.g., ₹1,000 withdrawal from 'Emergency Fund' will automatically be recorded as -₹1,000).</li>
+                </ul>
+            </li>
+            
+            <li><strong>Review Summary:</strong> The Allocations section updates instantly, showing you the exact remaining budget for Needs and Wants, and your total 'Current Saved' amount.</li>
+            
+            <li><strong>End of Month Procedure (Archive & Export):</strong>
+                <ul>
+                    <li>Click <strong>Export to CSV</strong>: This saves a complete, date-stamped file of your summary and detailed history to your computer (ready for Excel).</li>
+                    <li>Click <strong>Archive Month & Reset</strong>: This moves the current month's final summary into the 'Past Month History' table and clears the transaction history, preparing the tracker for the next month.</li>
+                </ul>
+            </li>
+        </ol>
+    </section>
     
     <section class="section" style="border: none; padding-bottom: 0;">
         <button id="clearAll" class="danger">Clear All Data (Everything)</button>
@@ -555,7 +582,7 @@
       
       setupChart(); 
       updateRemaining();
-      renderHistory(); // Render history on load
+      renderHistory(); 
       
       displayRandomDua(); 
       attachEventListeners();
@@ -823,7 +850,7 @@
         categoryChart.update();
     }
     
-    // --- Export to CSV Function (FIXED to include HISTORY) ---
+    // --- Export to CSV Function ---
     function exportToCsv() {
         // --- 1. Build Historical Summary Header ---
         let csv = 'Historical Monthly Summaries\n';
@@ -831,7 +858,7 @@
         
         history.forEach(item => {
             csv += [
-                item.monthLabel.replace(/,/g, ''), // Clean month label
+                item.monthLabel.replace(/,/g, ''), 
                 item.income.toFixed(2),
                 item.totalSpent.toFixed(2),
                 item.netSaved.toFixed(2),
@@ -882,7 +909,8 @@
                 const amount = Number(e.amount);
                 const type = e.section === 'savings' && amount < 0 ? 'Withdrawal' : 'Expense';
                 
-                // NOTE: Use '="date"' format for dates to force Excel to treat it as text/string
+                // FIX: Use '="date"' format for dates to force Excel to treat it as text/string
+                // This resolves the #### issue; user must still stretch the column.
                 const cleanDate = `="${e.date}"`; 
                 const cleanNote = (e.note || '').replace(/,/g, ';').replace(/"/g, '""'); 
                 
@@ -913,8 +941,8 @@
     }
 
     // --- Archive Functionality ---
-    function handleArchiveMonth() {
-        if (!confirm("Are you sure you want to archive the current month and reset transactions?")) return;
+    function handleArchiveMonth(skipConfirm = false, archiveDate = new Date()) {
+        if (!skipConfirm && !confirm("Are you sure you want to archive the current month and reset transactions?")) return;
 
         // 1. Calculate final snapshot values
         const allocP = allocations;
@@ -932,13 +960,13 @@
         const savingsRate = formatPercent(totalSavedAmount, totalIncome);
         
         // 2. Determine Month Label
-        const now = new Date();
-        const monthLabel = now.toLocaleString('default', { month: 'long', year: 'numeric' });
+        const dateToLabel = archiveDate || new Date();
+        const monthLabel = dateToLabel.toLocaleString('default', { month: 'long', year: 'numeric' });
 
         // 3. Create History Object
         const historyEntry = {
             id: Date.now(),
-            date: now.toISOString(),
+            date: dateToLabel.toISOString(),
             monthLabel: monthLabel,
             income: totalIncome,
             totalSpent: totalSpent,
@@ -955,7 +983,6 @@
         saveExpenses();
         
         // 6. Update UI
-        // Reset expDate to today (or the 1st of the next month, depending on preference)
         expDate.value = new Date().toISOString().slice(0,10);
         
         renderExpenses();
@@ -977,7 +1004,7 @@
       clearAllBtn.addEventListener('click', handleClearAll);
       
       // Archive Listener
-      archiveMonthBtn.addEventListener('click', handleArchiveMonth);
+      archiveMonthBtn.addEventListener('click', () => handleArchiveMonth(false, new Date())); // User click requires confirmation
       
       // CSV Listener
       exportCsvBtn.addEventListener('click', exportToCsv); 
