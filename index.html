@@ -465,7 +465,7 @@
     const KEY_ALLOC = 'budget_allocations_v15';
     const KEY_CATEGORIES = 'budget_categories_v15';
     const KEY_THEME = 'budget_theme_v1';
-    const KEY_HISTORY = 'budget_history_v1'; // NEW HISTORY KEY
+    const KEY_HISTORY = 'budget_history_v1';
 
     // 20 Du'as related to Rizq, Barakah, and Sufficiency
     const ROTATING_DUAS = [
@@ -521,8 +521,8 @@
     const topDuaDisplay = document.getElementById('topDuaDisplay');
     const themeToggle = document.getElementById('themeToggle');
     const exportCsvBtn = document.getElementById('exportCsv');
-    const archiveMonthBtn = document.getElementById('archiveMonth'); // New button
-    const historyTableBody = document.getElementById('history-table-body'); // New table body
+    const archiveMonthBtn = document.getElementById('archiveMonth');
+    const historyTableBody = document.getElementById('history-table-body');
 
     // Modal Elements
     const categoryModal = document.getElementById('categoryModal');
@@ -561,7 +561,28 @@
       attachEventListeners();
     }
     
+    // --- Theme Toggling ---
+    function toggleTheme() {
+        document.body.classList.toggle('dark-mode');
+        const isDarkMode = document.body.classList.contains('dark-mode');
+        localStorage.setItem(KEY_THEME, isDarkMode ? 'dark' : 'light');
+        setupChart(); // Recreate chart to pick up new theme colors
+        updateChart();
+    }
+
+    // --- Du'a Functionality ---
+    function displayRandomDua() {
+        const randomIndex = Math.floor(Math.random() * ROTATING_DUAS.length);
+        const dua = ROTATING_DUAS[randomIndex];
+        
+        topDuaDisplay.innerHTML = `
+            ${dua.arabic}
+            <br>(${dua.translation})
+        `;
+    }
+
     // --- Data Management & Helper Functions ---
+    
     function saveHistory(){ localStorage.setItem(KEY_HISTORY, JSON.stringify(history)); }
     function saveExpenses(){ localStorage.setItem(KEY_EXP, JSON.stringify(expenses)); }
     function saveIncome(){ localStorage.setItem(KEY_INC, String(totalIncome)); }
@@ -650,7 +671,7 @@
         // Reverse order to show most recent first
         history.slice().reverse().forEach(item => {
             const date = new Date(item.date);
-            const monthLabel = `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+            const monthLabel = item.monthLabel || `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
             
             const tr = document.createElement('tr');
             tr.innerHTML = `
@@ -746,6 +767,7 @@
     // --- Chart Logic ---
     function setupChart() {
         const ctx = document.getElementById('categoryChart').getContext('2d');
+        // Destroy any existing chart instance before creating a new one
         if (categoryChart) {
             categoryChart.destroy();
         }
@@ -762,6 +784,7 @@
                     legend: { 
                         position: 'top',
                         labels: {
+                            // Ensures legend text color matches the current theme
                             color: document.body.classList.contains('dark-mode') ? 'var(--text)' : 'var(--text)'
                         }
                     }, 
@@ -800,9 +823,25 @@
         categoryChart.update();
     }
     
-    // --- Export to CSV Function ---
+    // --- Export to CSV Function (FIXED to include HISTORY) ---
     function exportToCsv() {
-        // --- 1. Gather Summary Data ---
+        // --- 1. Build Historical Summary Header ---
+        let csv = 'Historical Monthly Summaries\n';
+        csv += 'Month,Income,Spent (Total),Net Savings,Savings Rate\n';
+        
+        history.forEach(item => {
+            csv += [
+                item.monthLabel.replace(/,/g, ''), // Clean month label
+                item.income.toFixed(2),
+                item.totalSpent.toFixed(2),
+                item.netSaved.toFixed(2),
+                item.savingsRate
+            ].join(',') + '\n';
+        });
+
+        csv += '\n-------------------------------------------------\n\n';
+        
+        // --- 2. Gather Current Month Summary Data ---
         const allocated = {
             needs: totalIncome * (allocations.needs / 100),
             wants: totalIncome * (allocations.wants / 100),
@@ -817,25 +856,24 @@
         const remaining = totalIncome - totalSpent;
         const savingsRate = formatPercent(totalSavedAmount, totalIncome);
 
-
-        // --- 2. Build Summary Header ---
-        let csv = 'Budget Summary\n';
-        csv += `Total Income,${totalIncome}\n`;
+        // --- 3. Build Current Month Summary ---
+        csv += 'Current Month Summary\n';
+        csv += `Total Income,${totalIncome.toFixed(2)}\n`;
         csv += `Total Spent,${totalSpent.toFixed(2)}\n`;
         csv += `Remaining (Income - Spent),${remaining.toFixed(2)}\n`;
         csv += `Savings Rate,${savingsRate}\n`;
-        csv += 'Allocations,Percentage,Target Amount,Net Spent,Remaining\n';
+        csv += 'Allocations,Percentage,Target Amount,Spent Amount,Remaining Budget\n';
         
-        // Note: For CSV, we calculate the remaining budget value (Target - Absolute Spending)
+        // Add allocation rows
         csv += `Needs,${allocations.needs}%,${allocated.needs.toFixed(2)},${(Math.abs(netSpent.needs)).toFixed(2)},${(allocated.needs - Math.abs(netSpent.needs)).toFixed(2)}\n`;
         csv += `Wants,${allocations.wants}%,${allocated.wants.toFixed(2)},${(Math.abs(netSpent.wants)).toFixed(2)},${(allocated.wants - Math.abs(netSpent.wants)).toFixed(2)}\n`;
-        csv += `Savings (Initial 20%),${allocations.savings}%,${allocated.savings.toFixed(2)},${totalSavedAmount.toFixed(2)},N/A\n`;
+        csv += `Savings (Net),${allocations.savings}%,${allocated.savings.toFixed(2)},${totalSavedAmount.toFixed(2)},N/A\n`;
 
-        csv += '\nExpense History\n';
+        csv += '\nTransaction History\n';
         
-        // --- 3. Build Transaction Data ---
+        // --- 4. Build Current Transaction Data ---
         if (expenses.length === 0) {
-            csv += 'No transactions recorded.\n';
+            csv += 'No current month transactions recorded.\n';
         } else {
             // Define CSV headers for transactions
             csv += 'Date,Section,Category,Amount,Note,Type\n';
@@ -843,21 +881,24 @@
             expenses.forEach(e => {
                 const amount = Number(e.amount);
                 const type = e.section === 'savings' && amount < 0 ? 'Withdrawal' : 'Expense';
-                const cleanNote = (e.note || '').replace(/,/g, ';'); 
+                
+                // NOTE: Use '="date"' format for dates to force Excel to treat it as text/string
+                const cleanDate = `="${e.date}"`; 
+                const cleanNote = (e.note || '').replace(/,/g, ';').replace(/"/g, '""'); 
                 
                 csv += [
-                    e.date,
+                    cleanDate, 
                     capitalize(e.section),
                     e.category,
                     Math.abs(amount).toFixed(2), // Export absolute value
-                    cleanNote,
+                    `"${cleanNote}"`, // Wrap note in quotes
                     type
                 ].join(',') + '\n';
             });
         }
         
 
-        // --- 4. Trigger Download ---
+        // --- 5. Trigger Download ---
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         
@@ -903,7 +944,6 @@
             totalSpent: totalSpent,
             netSaved: totalSavedAmount,
             savingsRate: savingsRate,
-            // You could save raw expenses here too, but for simplicity, we save only the summary.
         };
         
         // 4. Save to History
@@ -915,7 +955,7 @@
         saveExpenses();
         
         // 6. Update UI
-        // Move expDate to the 1st of the next month (or today's date)
+        // Reset expDate to today (or the 1st of the next month, depending on preference)
         expDate.value = new Date().toISOString().slice(0,10);
         
         renderExpenses();
@@ -1056,7 +1096,7 @@
                 if (importedData.totalIncome !== undefined) totalIncome = Number(importedData.totalIncome) || 0;
                 if (importedData.allocations) allocations = importedData.allocations;
                 if (importedData.expenses) expenses = importedData.expenses;
-                if (importedData.history) history = importedData.history; // Import history
+                if (importedData.history) history = importedData.history;
                 
                 categories = importedData.categories || BASE_CATEGORIES;
                 if (!categories.includes('Other')) categories.push('Other');
