@@ -56,7 +56,6 @@
       box-shadow: 0 10px 30px var(--shadow-color); 
       transition: background 0.3s, box-shadow 0.3s;
     }
-    h1 { text-align:center; margin: 6px 0 2px 0; font-size: 24px; }
     
     /* Du'a Styling */
     .dua {
@@ -65,7 +64,7 @@
         font-weight: 600;
         margin-top: 5px;
         margin-bottom: 15px;
-        color: var(--success); /* Always use the theme's success color */
+        color: var(--success);
     }
     
     h3 { margin-top: 20px; font-size: 18px; color: var(--accent); }
@@ -74,11 +73,11 @@
         padding: 15px; 
         border: 1px solid var(--border); 
         border-radius: 10px;
-        background: var(--card); /* Base section color */
+        background: var(--card);
         transition: background 0.3s, border-color 0.3s;
     }
     body.dark-mode .section {
-        background: #363650; /* Slightly darker than card background */
+        background: #363650;
     }
 
     label { display:block; margin-top:8px; font-weight:600; font-size: 14px; }
@@ -106,8 +105,6 @@
     button:hover{ filter:brightness(1.2); transform: translateY(-1px); }
     button.danger{ background:var(--danger); }
     button.success{ background:var(--success); }
-    button.danger:hover{ filter:brightness(1.2); }
-    button.success:hover{ filter:brightness(1.2); }
     
     .muted{ color:var(--muted); font-size:14px; margin-top:8px; }
     
@@ -152,6 +149,22 @@
         border-color: var(--accent);
     }
 
+    /* Chart Styling: Ensures chart content is centered */
+    .chart-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        margin-top: 20px;
+        /* Center content within section on small screens */
+        margin-left: auto;
+        margin-right: auto;
+    }
+    #categoryChart {
+        max-width: 100%;
+        height: auto;
+    }
+
     /* Modal Styling */
     .modal {
       display: none;
@@ -166,7 +179,7 @@
       padding-top: 20px;
     }
     .modal-content {
-      background-color: var(--card); /* Modal uses card background */
+      background-color: var(--card);
       margin: 10% auto; 
       padding: 25px;
       border: 1px solid var(--border);
@@ -177,7 +190,6 @@
       transition: background 0.3s, border-color 0.3s;
     }
     .close { color: var(--danger); }
-    .close:hover, .close:focus { color: var(--text); }
     
     /* Theme Toggle Switch */
     .theme-toggle-container {
@@ -239,7 +251,45 @@
         transform: translateX(16px);
     }
 
-    /* Media Queries */
+    /* -----------------------------------
+       4. MEDIA QUERIES (Desktop/Tablet Layout)
+       ----------------------------------- */
+    @media (min-width: 700px) {
+        /* TOP GRID: Allocations + Add Expense */
+        .main-content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* Two equal columns */
+            gap: 20px;
+            margin-bottom: 16px;
+        }
+        
+        /* BOTTOM GRID: Chart + History (Chart is smaller, History takes up more space) */
+        .table-and-chart-grid {
+            display: grid;
+            /* 40% for the chart, 60% for the wide table/history */
+            grid-template-columns: 2fr 3fr; 
+            gap: 20px;
+            margin-bottom: 16px;
+        }
+
+        .section {
+            margin: 0; /* Remove vertical margin when in grid */
+        }
+        
+        /* Ensures chart content is tightly packed and centered */
+        .chart-container {
+            max-width: 100%; 
+            margin-left: auto;
+            margin-right: auto;
+        }
+        #categoryChart {
+            max-width: 100%; /* Allows the chart to fill its smaller 40% column */
+        }
+    }
+
+    /* -----------------------------------
+       5. MEDIA QUERIES (Mobile Layout)
+       ----------------------------------- */
     @media (max-width:700px){
       .btn-row{ flex-direction:column; }
       .container { padding: 10px; }
@@ -275,75 +325,77 @@
       </div>
     </section>
 
-    <section class="section">
-      <h3>Allocations 💰 
-        <button id="editAllocations" class="edit-allocation-btn">Edit Percentages</button>
-      </h3>
-      
-      <p id="needs">Needs: ₹0 (Remaining: ₹0)</p>
-      <p id="wants">Wants: ₹0 (Remaining: ₹0)</p>
-      <p id="savings">Savings: ₹0 (Current Saved: ₹0)</p>
-      
-      <p id="totalSummary" class="muted">Total Income: ₹0 • Total Spent: ₹0 • Remaining: ₹0 • Savings Rate: 0%</p>
-    </section>
+    <div class="main-content-grid">
+        <section class="section">
+          <h3>Allocations 💰 
+            <button id="editAllocations" class="edit-allocation-btn">Edit Percentages</button>
+          </h3>
+          
+          <p id="needs">Needs: ₹0 (Remaining: ₹0)</p>
+          <p id="wants">Wants: ₹0 (Remaining: ₹0)</p>
+          <p id="savings">Savings: ₹0 (Current Saved: ₹0)</p>
+          
+          <p id="totalSummary" class="muted">Total Income: ₹0 • Total Spent: ₹0 • Remaining: ₹0 • Savings Rate: 0%</p>
+        </section>
 
-    <section class="section">
-      <h3>Add Expense</h3>
+        <section class="section">
+          <h3>Add Expense</h3>
 
-      <label for="expense-section">Budget Section (50/30/20):</label>
-      <select id="expense-section">
-        <option value="needs">Needs (50%)</option>
-        <option value="wants">Wants (30%)</option>
-        <option value="savings">Savings (20%)</option>
-      </select>
-      
-      <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-          <label for="expense-category" style="margin-bottom: 0;">Sub-Category:</label>
-          <button id="manageCategoriesBtn" class="edit-allocation-btn" style="width: auto; margin-top: 0;">Manage Categories</button>
-      </div>
-      <select id="expense-category"></select>
+          <label for="expense-section">Budget Section (50/30/20):</label>
+          <select id="expense-section">
+            <option value="needs">Needs (50%)</option>
+            <option value="wants">Wants (30%)</option>
+            <option value="savings">Savings (20%)</option>
+          </select>
+          
+          <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+              <label for="expense-category" style="margin-bottom: 0;">Sub-Category:</label>
+              <button id="manageCategoriesBtn" class="edit-allocation-btn" style="width: auto; margin-top: 0;">Manage Categories</button>
+          </div>
+          <select id="expense-category"></select>
 
-      <label for="expense-amount">Amount:</label>
-      <input type="number" id="expense-amount" placeholder="Amount spent">
+          <label for="expense-amount">Amount:</label>
+          <input type="number" id="expense-amount" placeholder="Amount spent">
 
-      <label for="expense-date">Date:</label>
-      <input type="date" id="expense-date">
+          <label for="expense-date">Date:</label>
+          <input type="date" id="expense-date">
 
-      <label for="expense-note">Note:</label>
-      <input type="text" id="expense-note" placeholder="optional">
+          <label for="expense-note">Note:</label>
+          <input type="text" id="expense-note" placeholder="optional">
 
-      <div class="btn-row">
-        <button id="add-expense">Add Expense</button>
-      </div>
-    </section>
-    
-    <section class="section">
-        <h3>Category Spending Chart 📈</h3>
-        <p class="muted">This chart shows your total categorized expenditures this month.</p>
-        <div class="chart-container">
-            <canvas id="categoryChart"></canvas>
-        </div>
-    </section>
+          <div class="btn-row">
+            <button id="add-expense">Add Expense</button>
+          </div>
+        </section>
+    </div>
+    <div class="table-and-chart-grid">
+        <section class="section">
+            <h3>Category Spending Chart 📈</h3>
+            <p class="muted">This chart shows your total categorized expenditures this month.</p>
+            <div class="chart-container">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </section>
 
-    <section class="section">
-      <h3>Expense History</h3>
-      <div class="table-responsive">
-        <table id="expense-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Section</th>
-              <th>Category</th>
-              <th>Amount</th>
-              <th>Note</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </section>
-    
+        <section class="section">
+          <h3>Expense History</h3>
+          <div class="table-responsive">
+            <table id="expense-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Section</th>
+                  <th>Category</th>
+                  <th>Amount</th>
+                  <th>Note</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+    </div>
     <section class="section" style="border: none; padding-bottom: 0;">
         <button id="clearAll" class="danger">Clear All Data</button>
     </section>
@@ -430,7 +482,7 @@
     let totalIncome = Number(localStorage.getItem(KEY_INC)) || 0;
     let allocations = JSON.parse(localStorage.getItem(KEY_ALLOC)) || { needs: 50, wants: 30, savings: 20 };
     
-    // DOM Elements (truncated for brevity)
+    // DOM Elements
     const totalInput = document.getElementById('total');
     const clearAllBtn = document.getElementById('clearAll');
     const needsEl = document.getElementById('needs');
@@ -446,7 +498,7 @@
     const topDuaDisplay = document.getElementById('topDuaDisplay');
     const themeToggle = document.getElementById('themeToggle');
 
-    // Category Modal Elements
+    // Modal Elements
     const categoryModal = document.getElementById('categoryModal');
     const manageCategoriesBtn = document.getElementById('manageCategoriesBtn');
     const closeCategoryModalBtn = document.getElementById('closeCategoryModal');
@@ -454,8 +506,6 @@
     const addCategoryBtn = document.getElementById('addCategoryBtn');
     const currentCategoryList = document.getElementById('currentCategoryList');
     const closeAllocationModalBtn = document.getElementById('closeAllocationModal');
-
-    // Allocation Modal Elements
     const allocationModal = document.getElementById('allocationModal');
     const editAllocationsBtn = document.getElementById('editAllocations');
     
@@ -467,6 +517,9 @@
       if (savedTheme === 'dark') {
           document.body.classList.add('dark-mode');
           themeToggle.checked = true;
+      } else {
+          document.body.classList.remove('dark-mode');
+          themeToggle.checked = false;
       }
       
       totalInput.value = totalIncome || '';
@@ -486,8 +539,7 @@
         document.body.classList.toggle('dark-mode');
         const isDarkMode = document.body.classList.contains('dark-mode');
         localStorage.setItem(KEY_THEME, isDarkMode ? 'dark' : 'light');
-        // Re-render chart to pick up new colors (required by Chart.js)
-        setupChart();
+        setupChart(); // Recreate chart to pick up new theme colors
         updateChart();
     }
 
