@@ -311,8 +311,14 @@
       expDate.value = new Date().toISOString().slice(0,10);
       populateCategorySelect();
       renderExpenses();
-      updateRemaining();
+      
+      // FIX 1: Ensure chart setup happens before update logic
       setupChart(); 
+      
+      // FIX 2: Explicitly call updateRemaining which calls updateChart() 
+      // This guarantees the chart is rendered immediately upon page load.
+      updateRemaining();
+      
       attachEventListeners();
     }
     
@@ -350,7 +356,6 @@
             const listItem = document.createElement('div');
             listItem.className = 'category-list-item';
             
-            // Now ALL categories are deletable except 'Other' (catch-all)
             const isDeletable = cat !== 'Other';
             
             listItem.innerHTML = `
@@ -452,10 +457,10 @@
         let displayAmount;
         
         if (e.section === 'savings') {
-             // Now all savings transactions are withdrawals (negative internal value)
+             // All savings transactions are withdrawals (negative internal value)
              displayAmount = fmt(Math.abs(amountValue)) + ' (Withdrawal)';
         } else {
-            // Needs/Wants are always positive, so we display the amount as is.
+            // Needs/Wants are positive.
             displayAmount = fmt(amountValue);
         }
 
@@ -480,7 +485,10 @@
     // --- Chart Logic ---
     function setupChart() {
         const ctx = document.getElementById('categoryChart').getContext('2d');
-        if (categoryChart) categoryChart.destroy(); 
+        // FIX: Destroy any existing chart instance before creating a new one
+        if (categoryChart) {
+            categoryChart.destroy();
+        }
 
         categoryChart = new Chart(ctx, {
             type: 'pie',
@@ -505,7 +513,7 @@
                 const category = e.category;
                 const amount = Number(e.amount);
                 
-                // Use Math.abs() to ensure withdrawals show up as a positive segment on the chart
+                // Use Math.abs() to ensure all expenditures (including withdrawals) show up as a positive segment
                 categorySpending[category] = (categorySpending[category] || 0) + Math.abs(amount);
             }
         });
@@ -566,7 +574,7 @@
         }
         if (!category){ alert('Please select a category'); return; }
 
-        // Core Fix: If section is 'savings', record the positive input as a negative withdrawal
+        // If section is 'savings', record the positive input as a negative withdrawal
         if (section === 'savings') {
             amount = -Math.abs(amount); 
         }
@@ -646,7 +654,7 @@
                 if (importedData.expenses) expenses = importedData.expenses;
                 
                 categories = importedData.categories || BASE_CATEGORIES;
-                if (!categories.includes('Other')) categories.push('Other'); // Ensure catch-all exists
+                if (!categories.includes('Other')) categories.push('Other');
 
                 saveIncome(); saveAllocations(); saveExpenses(); saveCategories();
                 
