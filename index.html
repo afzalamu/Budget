@@ -93,6 +93,16 @@
       transition: background 0.3s, color 0.3s, border-color 0.3s;
     }
     
+    /* Hide Number Input Spinners */
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type=number] {
+      -moz-appearance: textfield;
+    }
+    
     .btn-row{ display:flex; gap:10px; margin-top:12px; }
     button{ 
         background:var(--accent); 
@@ -159,7 +169,7 @@
         margin-left: auto;
         margin-right: auto;
     }
-    #categoryChart {
+    #categoryChart, #dailyChart {
         max-width: 100%;
         height: auto;
     }
@@ -367,10 +377,18 @@
           </div>
         </section>
     </div>
+    <section class="section">
+        <h3>Weekly Spending Trend 📊</h3>
+        <p class="muted">Net daily expenditure (Needs, Wants, & Savings Withdrawals) over the last 7 days.</p>
+        <div class="chart-container">
+            <canvas id="dailyChart"></canvas>
+        </div>
+    </section>
+
     <div class="table-and-chart-grid">
         <section class="section">
             <h3>Category Spending Chart 📈</h3>
-            <p class="muted">This chart shows your total categorized expenditures this month.</p>
+            <p class="muted">Monthly total categorized expenditures.</p>
             <div class="chart-container">
                 <canvas id="categoryChart"></canvas>
             </div>
@@ -429,7 +447,7 @@
             <li><strong>Log Transactions:</strong> Use the 'Add Expense' form for *every* spending transaction.
                 <ul>
                     <li>For **Needs** or **Wants**, enter the amount spent (e.g., ₹500).</li>
-                    <li>For **Savings**, enter the amount withdrawn (e.g., ₹1,000 withdrawal from 'Emergency Fund' will automatically be recorded as -₹1,000).</li>
+                    <li>For **Savings**, enter the amount withdrawn (e.g., ₹1,000 withdrawal from 'Emergency Fund' will automatically be recorded as a negative withdrawal).</li>
                 </ul>
             </li>
             
@@ -563,6 +581,7 @@
     const editAllocationsBtn = document.getElementById('editAllocations');
     
     let categoryChart;
+    let dailyChart; // Instance for the new daily bar chart
 
     function init(){
       // Load and apply theme preference first
@@ -581,10 +600,11 @@
       renderExpenses();
       
       setupChart(); 
-      updateRemaining();
+      setupDailyChart(); // Setup the new daily chart
+      updateRemaining(); // This calls updateChart() and updateDailyChart()
       renderHistory(); 
       
-      displayRandomDua(); 
+      displayRandomDua(); // Display Du'a on load
       attachEventListeners();
     }
     
@@ -594,7 +614,9 @@
         const isDarkMode = document.body.classList.contains('dark-mode');
         localStorage.setItem(KEY_THEME, isDarkMode ? 'dark' : 'light');
         setupChart(); // Recreate chart to pick up new theme colors
+        setupDailyChart(); // Recreate daily chart
         updateChart();
+        updateDailyChart();
     }
 
     // --- Du'a Functionality ---
@@ -754,6 +776,7 @@
       totalSummary.textContent = `Total Income: ${fmt(totalIncome)} • Total Spent: ${fmt(totalSpent)} • Remaining: ${fmt(remainingAfterNeedsWants)} • Savings Rate: ${effectiveSavingsRate}`;
       
       updateChart();
+      updateDailyChart(); // Call to update the new bar chart
     }
 
     function renderExpenses(){
@@ -811,7 +834,6 @@
                     legend: { 
                         position: 'top',
                         labels: {
-                            // Ensures legend text color matches the current theme
                             color: document.body.classList.contains('dark-mode') ? 'var(--text)' : 'var(--text)'
                         }
                     }, 
@@ -849,6 +871,105 @@
         categoryChart.data.datasets[0].backgroundColor = backgroundColors;
         categoryChart.update();
     }
+
+    // --- Daily Bar Chart Logic ---
+    function setupDailyChart() {
+        const ctx = document.getElementById('dailyChart').getContext('2d');
+        if (dailyChart) {
+            dailyChart.destroy();
+        }
+
+        dailyChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Daily Expenditure (₹)',
+                    data: [],
+                    backgroundColor: 'var(--accent)',
+                    borderColor: 'var(--accent)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: 'var(--muted)'
+                        },
+                        grid: {
+                            color: document.body.classList.contains('dark-mode') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: 'var(--muted)'
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+
+    function updateDailyChart() {
+        if (!dailyChart) return;
+
+        const dailySpending = {};
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // 1. Calculate the dates for the last 7 days
+        const lastSevenDays = [];
+        const dateOptions = { weekday: 'short', day: 'numeric' };
+
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date(today);
+            date.setDate(today.getDate() - i);
+            const dateKey = date.toISOString().slice(0, 10);
+            const dateLabel = date.toLocaleDateString('en-US', dateOptions);
+            
+            lastSevenDays.push({ key: dateKey, label: dateLabel, amount: 0 });
+        }
+
+        // 2. Aggregate spending for the last 7 days
+        expenses.forEach(e => {
+            const expenseDate = new Date(e.date + 'T00:00:00');
+            const expenseDateKey = expenseDate.toISOString().slice(0, 10);
+            const amount = Math.abs(Number(e.amount)); // Always use absolute expenditure
+
+            // Check if this expense falls within the 7-day range
+            const dayEntry = lastSevenDays.find(d => d.key === expenseDateKey);
+            if (dayEntry) {
+                dayEntry.amount += amount;
+            }
+        });
+
+        // 3. Prepare Chart Data
+        const labels = lastSevenDays.map(d => d.label);
+        const data = lastSevenDays.map(d => d.amount);
+
+        // 4. Update and Render
+        dailyChart.data.labels = labels;
+        dailyChart.data.datasets[0].data = data;
+        
+        // Update bar color based on theme
+        dailyChart.data.datasets[0].backgroundColor = document.body.classList.contains('dark-mode') ? '#5e64ff' : '#007bff';
+        dailyChart.data.datasets[0].borderColor = document.body.classList.contains('dark-mode') ? '#a0a0c0' : '#333';
+
+
+        dailyChart.update();
+    }
+
     
     // --- Export to CSV Function ---
     function exportToCsv() {
@@ -909,8 +1030,7 @@
                 const amount = Number(e.amount);
                 const type = e.section === 'savings' && amount < 0 ? 'Withdrawal' : 'Expense';
                 
-                // FIX: Use '="date"' format for dates to force Excel to treat it as text/string
-                // This resolves the #### issue; user must still stretch the column.
+                // NOTE: Use '="date"' format for dates to force Excel to treat it as text/string
                 const cleanDate = `="${e.date}"`; 
                 const cleanNote = (e.note || '').replace(/,/g, ';').replace(/"/g, '""'); 
                 
@@ -1004,7 +1124,7 @@
       clearAllBtn.addEventListener('click', handleClearAll);
       
       // Archive Listener
-      archiveMonthBtn.addEventListener('click', () => handleArchiveMonth(false, new Date())); // User click requires confirmation
+      archiveMonthBtn.addEventListener('click', () => handleArchiveMonth(false, new Date())); 
       
       // CSV Listener
       exportCsvBtn.addEventListener('click', exportToCsv); 
